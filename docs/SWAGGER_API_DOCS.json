@@ -1,0 +1,213 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Blockchain-Based Digital Coupon & Cashback Redemption System API",
+    "version": "1.0.0",
+    "description": "Production REST API specification for decentralized coupon issuance, cryptographic hash verification, customer claiming, zero-double redemption enforcement, and automated smart contract cashback disbursements."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000/api",
+      "description": "Local Development Server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "summary": "Register a new Customer or Merchant",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "email", "password"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "email": { "type": "string" },
+                  "password": { "type": "string" },
+                  "role": { "type": "string", "enum": ["customer", "merchant"] },
+                  "walletAddress": { "type": "string" },
+                  "businessName": { "type": "string" },
+                  "registrationNumber": { "type": "string" },
+                  "category": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Registration successful with JWT token" }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Authenticate user via email and password",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Authenticated successfully with JWT token" }
+        }
+      }
+    },
+    "/auth/nonce": {
+      "post": {
+        "summary": "Request cryptographic challenge nonce for MetaMask Web3 Login",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["walletAddress"],
+                "properties": {
+                  "walletAddress": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Unique nonce challenge returned" }
+        }
+      }
+    },
+    "/auth/verify-signature": {
+      "post": {
+        "summary": "Verify EIP-191 signature and authenticate Web3 session",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["walletAddress", "signature"],
+                "properties": {
+                  "walletAddress": { "type": "string" },
+                  "signature": { "type": "string" },
+                  "role": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Signature valid. JWT issued." }
+        }
+      }
+    },
+    "/merchants/coupons": {
+      "post": {
+        "summary": "Merchant creates coupon (computes Keccak256 hash)",
+        "tags": ["Merchant"],
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "201": { "description": "Coupon created with on-chain payload" }
+        }
+      },
+      "get": {
+        "summary": "List all coupons issued by authenticated merchant",
+        "tags": ["Merchant"],
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "List of merchant coupons" }
+        }
+      }
+    },
+    "/merchants/verify-coupon": {
+      "post": {
+        "summary": "Point-of-Sale verification against smart contract hash",
+        "tags": ["Merchant"],
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Verification status and details" }
+        }
+      }
+    },
+    "/customers/coupons": {
+      "get": {
+        "summary": "Browse active marketplace coupons with search and category filters",
+        "tags": ["Customer"],
+        "responses": {
+          "200": { "description": "Paginated list of active coupons" }
+        }
+      }
+    },
+    "/customers/coupons/{id}/claim": {
+      "post": {
+        "summary": "Customer claims coupon into decentralized wallet",
+        "tags": ["Customer"],
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Coupon claimed successfully" }
+        }
+      }
+    },
+    "/customers/coupons/{id}/redeem": {
+      "post": {
+        "summary": "Customer presents coupon, triggers on-chain redemption, records cashback",
+        "tags": ["Customer"],
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Redemption confirmed, cashback disbursed" }
+        }
+      }
+    },
+    "/admin/overview": {
+      "get": {
+        "summary": "Retrieve system KPIs, smart contract address and fraud count",
+        "tags": ["Admin"],
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "System overview metrics" }
+        }
+      }
+    },
+    "/admin/merchants/{id}/status": {
+      "put": {
+        "summary": "Approve, reject or suspend merchant",
+        "tags": ["Admin"],
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Merchant authorization status updated" }
+        }
+      }
+    },
+    "/analytics/dashboard": {
+      "get": {
+        "summary": "Get aggregate analytics for charts (redemptions, categories, fraud)",
+        "tags": ["Analytics"],
+        "responses": {
+          "200": { "description": "Analytics dataset returned" }
+        }
+      }
+    }
+  }
+}
